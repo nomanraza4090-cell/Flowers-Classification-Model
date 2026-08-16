@@ -1,0 +1,8 @@
+dataset/
+uploads/*.jpg
+uploads/*.jpeg
+uploads/*.png
+!uploads/.gitkeep
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flower AI Classifier | Deep Learning Image Recognition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+
+<div class="container">
+
+  <header class="hero">
+    <span class="badge">✨ CNN • 17-Class Flower Recognition</span>
+    <h1>Flower <span class="grad-text">AI</span> Classifier</h1>
+    <p>Upload a flower photo and our trained Convolutional Neural Network
+       will identify it from 17 categories — complete with a confidence score.</p>
+  </header>
+
+  <main class="card">
+
+    <div class="grid">
+
+      <!-- LEFT: Upload / Preview -->
+      <div class="panel">
+        <label class="drop" id="drop">
+          <input id="file" type="file" accept="image/*" hidden>
+          <div class="drop-icon">
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+              <path d="M12 16V4M12 4L7 9M12 4l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <strong>Drag & drop your image here</strong>
+          <span>or click to browse &nbsp;•&nbsp; JPG, PNG, WEBP</span>
+        </label>
+
+        <div class="preview-wrap" id="previewWrap" hidden>
+          <img id="preview" class="preview" alt="Preview">
+          <button class="chip-remove" id="removeImg" title="Remove image">✕</button>
+        </div>
+
+        <div class="actions">
+          <button id="predict" disabled>
+            <span class="btn-text">🔍 Predict Flower</span>
+            <span class="btn-loader" hidden></span>
+          </button>
+          <button id="reset" class="secondary">Reset</button>
+        </div>
+
+        <p id="error" class="error"></p>
+      </div>
+
+      <!-- RIGHT: Result -->
+      <div class="panel">
+        <section id="resultEmpty" class="result-empty">
+          <div class="empty-icon">🌼</div>
+          <p>Your prediction result will appear here.</p>
+        </section>
+
+        <section id="result" class="result" hidden>
+          <small>TOP PREDICTION</small>
+          <h2 id="label">—</h2>
+
+          <div class="confidence-bar">
+            <span id="confidence"></span>
+          </div>
+          <p id="confidenceText"></p>
+
+          <div class="top3" id="top3"></div>
+        </section>
+      </div>
+
+    </div>
+
+    <footer class="foot">
+      Powered by TensorFlow / Keras CNN &nbsp;•&nbsp; 17 Flower Classes
+    </footer>
+
+  </main>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

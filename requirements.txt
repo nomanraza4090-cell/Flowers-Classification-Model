@@ -1,11 +1,6 @@
-tensorflow
-numpy
-pandas
-pillow
-scikit-learn
-matplotlib
-seaborn
-streamlit
-flask
-flask-cors
-plotly
+tensorflow-cpu==2.15.0
+numpy==1.26.4
+pillow==10.2.0
+protobuf==4.25.3
+streamlit==1.31.0
+plotly==5.18.0

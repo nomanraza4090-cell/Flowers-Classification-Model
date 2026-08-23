@@ -19,3 +19,5 @@ Thumbs.db
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
+dataset/
+uploads/

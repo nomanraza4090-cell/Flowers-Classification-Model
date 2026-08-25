@@ -75,7 +75,13 @@ def inject_css() -> None:
            ================================================================ */
         
         .stApp {
-            background: linear-gradient(145deg, #0a0a1a 0%, #14142e 40%, #1a1a3e 100%);
+            background-color: #0a0a1a;
+            background-image:
+                linear-gradient(145deg, #0a0a1a 0%, #14142e 40%, #1a1a3e 100%),
+                url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22130%22%20height%3D%22130%22%20viewBox%3D%220%200%20130%20130%22%3E%0A%3Cg%20fill%3D%22none%22%20stroke%3D%22%23a29bfe%22%20stroke-opacity%3D%220.07%22%20stroke-width%3D%221.6%22%3E%0A%3Cg%20transform%3D%22translate%2865%2C65%29%22%3E%0A%3Cellipse%20cx%3D%220%22%20cy%3D%22-22%22%20rx%3D%2210%22%20ry%3D%2216%22/%3E%0A%3Cellipse%20cx%3D%220%22%20cy%3D%2222%22%20rx%3D%2210%22%20ry%3D%2216%22/%3E%0A%3Cellipse%20cx%3D%22-22%22%20cy%3D%220%22%20rx%3D%2216%22%20ry%3D%2210%22/%3E%0A%3Cellipse%20cx%3D%2222%22%20cy%3D%220%22%20rx%3D%2216%22%20ry%3D%2210%22/%3E%0A%3Cellipse%20cx%3D%22-15%22%20cy%3D%22-15%22%20rx%3D%2210%22%20ry%3D%2216%22%20transform%3D%22rotate%2845%20-15%20-15%29%22/%3E%0A%3Cellipse%20cx%3D%2215%22%20cy%3D%22-15%22%20rx%3D%2210%22%20ry%3D%2216%22%20transform%3D%22rotate%28-45%2015%20-15%29%22/%3E%0A%3Cellipse%20cx%3D%22-15%22%20cy%3D%2215%22%20rx%3D%2210%22%20ry%3D%2216%22%20transform%3D%22rotate%28-45%20-15%2015%29%22/%3E%0A%3Cellipse%20cx%3D%2215%22%20cy%3D%2215%22%20rx%3D%2210%22%20ry%3D%2216%22%20transform%3D%22rotate%2845%2015%2015%29%22/%3E%0A%3Ccircle%20cx%3D%220%22%20cy%3D%220%22%20r%3D%229%22/%3E%0A%3C/g%3E%0A%3Cline%20x1%3D%2265%22%20y1%3D%2295%22%20x2%3D%2265%22%20y2%3D%22128%22%20stroke-width%3D%221.4%22/%3E%0A%3C/g%3E%0A%3C/svg%3E");
+            background-repeat: no-repeat, repeat;
+            background-size: cover, 190px 190px;
+            background-attachment: fixed, fixed;
             color: #e8e8e8;
         }
 

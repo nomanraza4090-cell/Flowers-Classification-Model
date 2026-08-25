@@ -1,15 +1,11 @@
 """
-AI Vision — 17-Class Flower Classifier
+AI Vision — 17-Class Flower Classifier (Classic Theme)
 A production-quality Streamlit application serving a trained CNN
 (EfficientNetB2 transfer-learning model) for 17-class flower classification.
 
 Model: models/final_model.keras (fallback: models/flower_saved_model/)
-Preprocessing (must match training exactly — see notebooks/Flower_Classifier_17Class_HighAccuracy.ipynb):
-    - Convert to RGB
-    - Resize to 260x260
-    - Cast to float32 (NO manual rescale/division by 255 — EfficientNetB2's
-      Keras implementation has normalization built into the base model)
-Output: softmax over 17 classes, class order taken from models/class_names.json
+Preprocessing: RGB → Resize 260x260 → float32 (EfficientNetB2 normalizes internally)
+Output: softmax over 17 classes
 """
 
 import io
@@ -25,7 +21,7 @@ import streamlit as st
 from PIL import Image, UnidentifiedImageError
 
 # ----------------------------------------------------------------------------
-# CONSTANTS — derived from inspection of Flower_Classifier_17Class_HighAccuracy.ipynb
+# CONSTANTS
 # ----------------------------------------------------------------------------
 APP_DIR = Path(__file__).parent
 MODELS_DIR = APP_DIR / "models"
@@ -36,21 +32,20 @@ MODEL_CANDIDATES = [
 ]
 LABELS_PATH = MODELS_DIR / "class_names.json"
 
-IMG_SIZE = 260           # IMG_SIZE = (260, 260) — EfficientNetB2 native input resolution
+IMG_SIZE = 260
 SUPPORTED_FORMATS = ("jpg", "jpeg", "png", "webp")
-CONFIDENCE_THRESHOLD = 0.45  # matches predict_flower()'s low-confidence flag in the notebook
-TOP_K = 5                 # matches the notebook's top5_predictions() diagnostic
+CONFIDENCE_THRESHOLD = 0.45
+TOP_K = 5
 
 PAGES = ["Dashboard", "Classify Image", "Analytics", "About Model"]
 
-# Distinct colors so the top-5 chart / pie stay readable across 17 possible classes
+# Classic professional color palette
 PALETTE = [
-    "#6366f1", "#22d3ee", "#f59e0b", "#ec4899", "#22c55e",
-    "#a855f7", "#ef4444", "#14b8a6", "#eab308", "#3b82f6",
-    "#f97316", "#84cc16", "#e879f9", "#06b6d4", "#f43f5e",
-    "#8b5cf6", "#10b981",
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+    "#1a55a0", "#e67e22", "#27ae60", "#c0392b", "#8e44ad",
+    "#2c3e50", "#f39c12",
 ]
-
 
 # ----------------------------------------------------------------------------
 # PAGE CONFIG
@@ -62,216 +57,249 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
 # ----------------------------------------------------------------------------
-# CUSTOM CSS — premium dark dashboard (shared visual language with the
-# Cat & Dog classifier, re-themed around a floral accent palette)
+# CUSTOM CSS — Clean Classic Theme
 # ----------------------------------------------------------------------------
 def inject_css() -> None:
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        /* Import clean font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-
-        :root {
-            --bg-primary: #0b0f17;
-            --card-bg: rgba(255, 255, 255, 0.035);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent: #ec4899;
-            --accent-2: #a855f7;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --warning: #f59e0b;
+        /* Reset & base */
+        html, body, [class*="css"] { 
+            font-family: 'Inter', sans-serif; 
         }
 
+        /* Main background - clean white/light gray */
         .stApp {
-            background: radial-gradient(circle at 15% 0%, #1c1226 0%, #0b0f17 45%, #090c12 100%);
-            color: var(--text-primary);
+            background: #f8f9fa;
+            color: #1a1a2e;
         }
 
+        /* Sidebar - clean white with subtle border */
         section[data-testid="stSidebar"] {
-            background: #120d1c;
-            border-right: 1px solid var(--card-border);
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
         }
 
+        /* Hide menu and footer */
         #MainMenu, footer, header { visibility: hidden; }
 
-        .block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1200px; }
-
-        /* Hero */
-        .hero-eyebrow {
-            display: inline-block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--accent-2);
-            background: rgba(168, 85, 247, 0.08);
-            border: 1px solid rgba(168, 85, 247, 0.25);
-            padding: 4px 12px;
-            border-radius: 999px;
-            margin-bottom: 14px;
-        }
-        .hero-title {
-            font-size: 2.6rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin: 0 0 6px 0;
-            background: linear-gradient(90deg, #f8fafc, #cbd5e1 60%, var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero-subtitle {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 10px;
-        }
-        .hero-desc {
-            color: var(--text-secondary);
-            font-size: 0.98rem;
-            max-width: 640px;
-            line-height: 1.5;
-        }
-
-        /* Generic glass card */
-        .glass-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 22px 24px;
-            backdrop-filter: blur(6px);
+        /* Cards - clean white with shadow */
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
         }
 
         /* Metric cards */
         .metric-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 18px 20px;
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 16px 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
             height: 100%;
         }
         .metric-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            color: #64748b;
             font-weight: 600;
-            margin-bottom: 6px;
         }
         .metric-value {
-            font-size: 1.35rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #0f172a;
         }
-        .metric-icon { font-size: 1.4rem; margin-bottom: 8px; opacity: 0.9; }
+        .metric-icon { font-size: 1.2rem; margin-bottom: 6px; }
 
+        /* Headings */
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .page-subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 8px 0 4px 0;
+        }
+        .section-caption {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        /* Status pills */
         .status-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 5px 12px;
+            padding: 4px 12px;
             border-radius: 999px;
         }
         .status-online {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.35);
-            color: #4ade80;
+            background: #e6f7e6;
+            border: 1px solid #b7e4b7;
+            color: #1e7e34;
         }
         .status-offline {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.35);
-            color: #f87171;
-        }
-        .status-warning {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.35);
-            color: #fbbf24;
+            background: #fde8e8;
+            border: 1px solid #f5c6c6;
+            color: #b91c1c;
         }
         .status-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+            width: 6px; height: 6px; border-radius: 50%; background: currentColor;
         }
 
-        /* Section headings */
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin: 8px 0 4px 0;
+        /* Buttons - clean blue */
+        .stButton > button {
+            background: #1f77b4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+            transition: all 0.15s ease;
         }
-        .section-caption { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 18px; }
+        .stButton > button:hover {
+            background: #1a5f8f;
+            box-shadow: 0 2px 8px rgba(31,119,180,0.25);
+        }
+        .stButton > button:active {
+            transform: scale(0.97);
+        }
+
+        /* Result card - clean */
+        .result-card {
+            background: #f0f7ff;
+            border: 1px solid #c5d9f0;
+            border-radius: 12px;
+            padding: 24px 28px;
+            text-align: center;
+        }
+        .result-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+        }
+        .result-class {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 4px 0;
+            color: #0f172a;
+            text-transform: capitalize;
+        }
+        .result-confidence {
+            font-size: 1rem;
+            color: #1f77b4;
+            font-weight: 600;
+        }
+        .result-lowconf {
+            font-size: 0.8rem;
+            color: #d97706;
+            font-weight: 600;
+            margin-top: 6px;
+        }
 
         /* Upload zone */
         div[data-testid="stFileUploaderDropzone"] {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1.5px dashed rgba(255, 255, 255, 0.18);
-            border-radius: 16px;
+            background: #fafafa;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 12px;
         }
 
-        /* Buttons */
-        .stButton > button {
-            background: linear-gradient(90deg, var(--accent), #be185d);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 0.6rem 1.4rem;
-            font-weight: 600;
-            transition: filter 0.15s ease, transform 0.15s ease;
+        /* Dataframes */
+        div[data-testid="stDataFrame"] {
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
         }
-        .stButton > button:hover { filter: brightness(1.12); transform: translateY(-1px); }
 
-        /* Prediction result card */
-        .result-card {
-            background: linear-gradient(145deg, rgba(236,72,153,0.10), rgba(168,85,247,0.05));
-            border: 1px solid rgba(236, 72, 153, 0.28);
-            border-radius: 20px;
-            padding: 30px 32px;
-            text-align: center;
-        }
-        .result-label { color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
-        .result-class { font-size: 2.4rem; font-weight: 800; margin: 6px 0; color: var(--text-primary); text-transform: capitalize; }
-        .result-confidence { font-size: 1.1rem; color: var(--accent-2); font-weight: 700; }
-        .result-lowconf { font-size: 0.85rem; color: #fbbf24; font-weight: 600; margin-top: 8px; }
-
+        /* Empty state */
         .empty-state {
             text-align: center;
-            padding: 50px 20px;
-            color: var(--text-secondary);
-            border: 1px dashed var(--card-border);
-            border-radius: 16px;
-            background: rgba(255,255,255,0.015);
+            padding: 40px 20px;
+            color: #94a3b8;
+            border: 1px dashed #e2e8f0;
+            border-radius: 12px;
+            background: #fafafa;
         }
 
         .footer-note {
             text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.78rem;
-            margin-top: 40px;
-            padding-top: 18px;
-            border-top: 1px solid var(--card-border);
+            color: #94a3b8;
+            font-size: 0.75rem;
+            margin-top: 30px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
         }
 
-        div[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+        /* Sidebar nav buttons */
+        .stButton > button[data-testid="baseButton-secondary"] {
+            background: transparent;
+            color: #1a1a2e;
+            border: 1px solid transparent;
+            justify-content: flex-start;
+        }
+        .stButton > button[data-testid="baseButton-secondary"]:hover {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+        .stButton > button[data-testid="baseButton-primary"] {
+            background: #f1f5f9;
+            color: #1a1a2e;
+            border: 1px solid #e2e8f0;
+            justify-content: flex-start;
+        }
+
+        /* Code blocks */
+        .stCodeBlock {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Expanders */
+        .streamlit-expanderHeader {
+            font-weight: 600;
+            color: #0f172a;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+
+        /* Plotly charts - consistent sizing */
+        .js-plotly-plot .plotly .main-svg {
+            border-radius: 8px;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
-
 
 # ----------------------------------------------------------------------------
 # MODEL / LABEL LOADING
 # ----------------------------------------------------------------------------
 @st.cache_resource(show_spinner=False)
 def load_model():
-    """Load the trained Keras model once, preferring the .keras export."""
-    import tensorflow as tf  # imported lazily so the page can render a clean error if missing
+    """Load the trained Keras model once."""
+    import tensorflow as tf
 
     last_error = None
     for path in MODEL_CANDIDATES:
@@ -279,7 +307,7 @@ def load_model():
             try:
                 model = tf.keras.models.load_model(path)
                 return model, path
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 last_error = exc
                 continue
     if last_error:
@@ -289,10 +317,9 @@ def load_model():
         + ", ".join(str(p) for p in MODEL_CANDIDATES)
     )
 
-
 @st.cache_data(show_spinner=False)
 def load_class_labels():
-    """Load the exact 17-class ordering (never guessed)."""
+    """Load the 17-class ordering."""
     if not LABELS_PATH.exists():
         raise FileNotFoundError(f"Missing class label file: {LABELS_PATH}")
     with open(LABELS_PATH, "r") as f:
@@ -301,24 +328,23 @@ def load_class_labels():
         raise ValueError("class_names.json does not contain a valid class list.")
     return classes
 
-
 def get_model_metadata(model):
-    """Pull real architecture facts from the loaded model (no invented values)."""
+    """Pull real architecture facts from the loaded model."""
     try:
         input_shape = model.input_shape
-    except Exception:  # noqa: BLE001
+    except Exception:
         input_shape = None
     try:
         output_shape = model.output_shape
-    except Exception:  # noqa: BLE001
+    except Exception:
         output_shape = None
     try:
         num_layers = len(model.layers)
-    except Exception:  # noqa: BLE001
+    except Exception:
         num_layers = None
     try:
         total_params = int(model.count_params())
-    except Exception:  # noqa: BLE001
+    except Exception:
         total_params = None
     return {
         "input_shape": input_shape,
@@ -327,22 +353,15 @@ def get_model_metadata(model):
         "total_params": total_params,
     }
 
-
 # ----------------------------------------------------------------------------
 # INFERENCE PIPELINE
 # ----------------------------------------------------------------------------
 def preprocess_image(image: Image.Image) -> np.ndarray:
-    """Reproduce the exact training-time preprocessing.
-
-    The training notebook resizes to 260x260 and casts to float32 WITHOUT
-    dividing by 255 — EfficientNetB2's Keras implementation normalizes
-    pixel values internally, so raw 0-255 floats are the correct input.
-    """
+    """Reproduce the exact training-time preprocessing."""
     img = image.convert("RGB").resize((IMG_SIZE, IMG_SIZE))
     arr = np.asarray(img, dtype=np.float32)
-    arr = np.expand_dims(arr, axis=0)  # batch dimension
+    arr = np.expand_dims(arr, axis=0)
     return arr
-
 
 def predict_image(model, arr: np.ndarray, classes: list) -> dict:
     """Run inference and interpret the softmax output correctly."""
@@ -371,18 +390,16 @@ def predict_image(model, arr: np.ndarray, classes: list) -> dict:
         "low_confidence": confidence < CONFIDENCE_THRESHOLD,
     }
 
-
 # ----------------------------------------------------------------------------
 # SESSION STATE
 # ----------------------------------------------------------------------------
 def init_session_state():
     if "history" not in st.session_state:
-        st.session_state.history = []  # list of dicts
+        st.session_state.history = []
     if "page" not in st.session_state:
         st.session_state.page = "Dashboard"
     if "last_result" not in st.session_state:
         st.session_state.last_result = None
-
 
 def record_prediction(filename: str, result: dict, model_label: str):
     st.session_state.history.append(
@@ -395,7 +412,6 @@ def record_prediction(filename: str, result: dict, model_label: str):
             "Model": model_label,
         }
     )
-
 
 # ----------------------------------------------------------------------------
 # SHARED UI HELPERS
@@ -413,14 +429,12 @@ def metric_card(col, icon: str, label: str, value: str):
             unsafe_allow_html=True,
         )
 
-
 def color_for_class(class_name: str, classes: list) -> str:
     try:
         idx = classes.index(class_name)
     except ValueError:
         idx = 0
     return PALETTE[idx % len(PALETTE)]
-
 
 def top_k_bar_chart(top_k: list, classes: list):
     labels = [c.replace("_", " ").title() for c, _ in top_k]
@@ -443,27 +457,30 @@ def top_k_bar_chart(top_k: list, classes: list):
         margin=dict(l=10, r=40, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#f1f5f9", family="Inter"),
-        xaxis=dict(range=[0, 100], showgrid=False, ticksuffix="%", color="#94a3b8"),
-        yaxis=dict(showgrid=False, color="#f1f5f9", autorange="reversed"),
+        font=dict(color="#1a1a2e", family="Inter"),
+        xaxis=dict(range=[0, 100], showgrid=True, gridcolor="#f0f0f0", ticksuffix="%", color="#64748b"),
+        yaxis=dict(showgrid=False, color="#1a1a2e", autorange="reversed"),
         showlegend=False,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-
 def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
     with st.sidebar:
         st.markdown(
-            "<div style='font-size:1.3rem;font-weight:800;color:#f1f5f9;"
-            "letter-spacing:-0.02em;margin-bottom:0px;'>AI Vision</div>"
-            "<div style='color:#94a3b8;font-size:0.8rem;margin-bottom:20px;'>"
-            "Computer Vision Suite</div>",
+            """
+            <div style="font-size:1.2rem;font-weight:700;color:#0f172a;margin-bottom:2px;">
+                🌸 AI Vision
+            </div>
+            <div style="color:#64748b;font-size:0.75rem;margin-bottom:20px;">
+                Flower Classifier
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
         icons = {"Dashboard": "🏠", "Classify Image": "🔍", "Analytics": "📊", "About Model": "ℹ️"}
         for page in PAGES:
-            label = f"{icons[page]}  {page}"
+            label = f"{icons[page]} {page}"
             btn_type = "primary" if st.session_state.page == page else "secondary"
             if st.button(label, key=f"nav_{page}", use_container_width=True, type=btn_type):
                 st.session_state.page = page
@@ -472,7 +489,7 @@ def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
         st.markdown("<div class='metric-label'>Model Information</div>", unsafe_allow_html=True)
         st.markdown(
             f"""
-            <div style="font-size:0.85rem; color:#cbd5e1; line-height:1.9;">
+            <div style="font-size:0.8rem; color:#475569; line-height:1.8;">
             CNN (EfficientNetB2 Transfer Learning)<br>
             {num_classes}-Class Flower Classification<br>
             TensorFlow / Keras
@@ -489,7 +506,7 @@ def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
                 unsafe_allow_html=True,
             )
             st.markdown(
-                f"<div style='font-size:0.72rem;color:#64748b;margin-top:6px;'>{model_label}</div>",
+                f"<div style='font-size:0.7rem;color:#94a3b8;margin-top:6px;'>{model_label}</div>",
                 unsafe_allow_html=True,
             )
         else:
@@ -500,28 +517,29 @@ def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
             )
 
         st.markdown(
-            "<div class='footer-note'>AI Vision v1.0<br>Built with Streamlit &amp; TensorFlow</div>",
+            "<div class='footer-note' style='margin-top:20px;'>AI Vision v1.0<br>"
+            "Built with Streamlit &amp; TensorFlow</div>",
             unsafe_allow_html=True,
         )
-
 
 # ----------------------------------------------------------------------------
 # PAGE: DASHBOARD
 # ----------------------------------------------------------------------------
 def render_dashboard(model_loaded: bool, classes: list, model_label: str):
-    st.markdown("<div class='hero-eyebrow'>Computer Vision · 17-Class Classification</div>", unsafe_allow_html=True)
-    st.markdown("<div class='hero-title'>AI Vision</div>", unsafe_allow_html=True)
-    st.markdown("<div class='hero-subtitle'>Flower Species Classification</div>", unsafe_allow_html=True)
+    st.markdown("<div class='page-title'>🌸 AI Vision</div>", unsafe_allow_html=True)
     st.markdown(
-        "<div class='hero-desc'>An AI-powered computer vision system that analyzes uploaded "
-        "photos and identifies which of 17 flower species is shown, using an EfficientNetB2 "
-        "transfer-learning CNN fine-tuned on a labeled flower image dataset.</div>",
+        "<div class='page-subtitle'>17-Class Flower Species Classification</div>",
         unsafe_allow_html=True,
     )
-    st.write("")
+    st.markdown(
+        "<div style='color:#475569;font-size:0.95rem;margin-bottom:20px;'>"
+        "Upload a flower photo and the AI will identify the species using an EfficientNetB2 "
+        "convolutional neural network trained on a labeled flower image dataset.</div>",
+        unsafe_allow_html=True,
+    )
 
     cols = st.columns(4)
-    metric_card(cols[0], "🧠", "Model Type", "CNN (EfficientNetB2)")
+    metric_card(cols[0], "🧠", "Model Architecture", "EfficientNetB2")
     metric_card(cols[1], "🏷️", "Number of Classes", str(len(classes)))
     metric_card(cols[2], "⚡", "Prediction Mode", "Single Image")
     metric_card(
@@ -531,20 +549,18 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
     st.write("")
     left, right = st.columns([1.3, 1])
     with left:
-        st.markdown("<div class='section-title'>Get Started</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>🚀 Quick Start</div>", unsafe_allow_html=True)
         st.markdown(
-            "<div class='section-caption'>Head to the Classify Image page to upload a "
-            "photo and run the model.</div>",
+            "<div class='section-caption'>Upload an image to get started with AI classification.</div>",
             unsafe_allow_html=True,
         )
         st.markdown(
-            f"""
-            <div class="glass-card">
-                <div style="font-weight:700;margin-bottom:10px;">Pipeline</div>
-                <div style="color:#94a3b8;font-size:0.92rem;line-height:1.7;">
-                Upload Image → Preprocess (resize {IMG_SIZE}×{IMG_SIZE}) →
-                EfficientNetB2 Backbone → Dense Head → Softmax (17-way) →
-                Class + Confidence
+            """
+            <div class="card">
+                <div style="font-weight:600;margin-bottom:8px;">Pipeline Overview</div>
+                <div style="color:#475569;font-size:0.88rem;line-height:1.7;">
+                Upload Image → Preprocess (Resize 260×260) → EfficientNetB2 Backbone → 
+                Dense Head → Softmax (17 classes) → Class + Confidence Score
                 </div>
             </div>
             """,
@@ -561,18 +577,21 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
         class_preview = ", ".join(c.replace("_", " ").title() for c in classes[:6])
         st.markdown(
             f"""
-            <div class="glass-card">
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                    <span style="color:#94a3b8;">Model</span><span>CNN (Transfer Learning)</span>
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:#64748b;">Model Type</span>
+                    <span style="font-weight:500;">CNN (Transfer Learning)</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                    <span style="color:#94a3b8;">Task</span><span>17-Class Image Classification</span>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:#64748b;">Task</span>
+                    <span style="font-weight:500;">17-Class Image Classification</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                    <span style="color:#94a3b8;">Sample Classes</span><span style="text-align:right;">{class_preview}…</span>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:#64748b;">Sample Classes</span>
+                    <span style="text-align:right;font-weight:500;">{class_preview}…</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#94a3b8;">Status</span>
+                    <span style="color:#64748b;">Status</span>
                     <span class="status-pill {status_class}"><span class="status-dot"></span>{status_text}</span>
                 </div>
             </div>
@@ -581,23 +600,22 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
         )
 
     st.write("")
-    st.markdown("<div class='section-title' style='font-size:1.05rem;'>Recognized Species</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>🌼 Recognized Species</div>", unsafe_allow_html=True)
     chip_html = "".join(
-        f"<span style='display:inline-block;margin:4px;padding:6px 14px;border-radius:999px;"
-        f"background:rgba(255,255,255,0.04);border:1px solid {color_for_class(c, classes)}55;"
-        f"color:#f1f5f9;font-size:0.82rem;'>{c.replace('_',' ').title()}</span>"
+        f"<span style='display:inline-block;margin:4px;padding:5px 12px;border-radius:999px;"
+        f"background:#f1f5f9;border:1px solid #e2e8f0;color:#1a1a2e;font-size:0.8rem;'>"
+        f"{c.replace('_',' ').title()}</span>"
         for c in classes
     )
-    st.markdown(f"<div class='glass-card'>{chip_html}</div>", unsafe_allow_html=True)
-
+    st.markdown(f"<div class='card'>{chip_html}</div>", unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------------
 # PAGE: CLASSIFY IMAGE
 # ----------------------------------------------------------------------------
 def render_classifier(model, classes: list, model_label: str):
-    st.markdown("<div class='section-title'>Classify Image</div>", unsafe_allow_html=True)
+    st.markdown("<div class='page-title'>🔍 Classify Image</div>", unsafe_allow_html=True)
     st.markdown(
-        "<div class='section-caption'>Drag and drop a flower photo here or browse your computer.</div>",
+        "<div class='page-subtitle'>Upload a flower photo for AI-powered species identification.</div>",
         unsafe_allow_html=True,
     )
 
@@ -614,22 +632,21 @@ def render_classifier(model, classes: list, model_label: str):
         )
         return
 
-    # Validate + open the image safely
     try:
         raw_bytes = uploaded_file.getvalue()
         image = Image.open(io.BytesIO(raw_bytes))
         image.verify()
-        image = Image.open(io.BytesIO(raw_bytes))  # reopen after verify()
+        image = Image.open(io.BytesIO(raw_bytes))
     except (UnidentifiedImageError, OSError):
         st.error("This file could not be read as a valid image. Please upload a JPG, PNG, or WEBP file.")
         return
 
     img_col, _ = st.columns([1, 1.4])
     with img_col:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.image(image, width=340)
         st.markdown(
-            f"<div style='color:#94a3b8;font-size:0.82rem;margin-top:6px;text-align:center;'>"
+            f"<div style='color:#64748b;font-size:0.8rem;margin-top:6px;text-align:center;'>"
             f"{uploaded_file.name} · {image.size[0]}×{image.size[1]}px</div>",
             unsafe_allow_html=True,
         )
@@ -641,16 +658,16 @@ def render_classifier(model, classes: list, model_label: str):
         return
 
     if model is None:
-        st.error("The model is not currently loaded, so this image cannot be analyzed. See the sidebar for details.")
+        st.error("The model is not currently loaded. Please check the sidebar for details.")
         return
 
-    with st.spinner("Analyzing image..."):
+    with st.spinner("🔍 Analyzing image..."):
         try:
             arr = preprocess_image(image)
             start = time.time()
             result = predict_image(model, arr, classes)
             elapsed_ms = (time.time() - start) * 1000
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             st.error("Something went wrong while analyzing this image. Please try a different file.")
             with st.expander("Technical details"):
                 st.code(str(exc))
@@ -660,7 +677,7 @@ def render_classifier(model, classes: list, model_label: str):
     st.session_state.last_result = result
 
     st.write("")
-    st.markdown("<div class='section-title'>Prediction</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📊 Prediction Results</div>", unsafe_allow_html=True)
 
     pred_class = result["predicted_class"]
     confidence = result["confidence"]
@@ -668,7 +685,7 @@ def render_classifier(model, classes: list, model_label: str):
 
     low_conf_html = (
         f"<div class='result-lowconf'>⚠️ Low confidence — below the "
-        f"{CONFIDENCE_THRESHOLD*100:.0f}% threshold, prediction may be unreliable</div>"
+        f"{CONFIDENCE_THRESHOLD*100:.0f}% threshold</div>"
         if result["low_confidence"]
         else ""
     )
@@ -676,7 +693,7 @@ def render_classifier(model, classes: list, model_label: str):
     st.markdown(
         f"""
         <div class="result-card">
-            <div class="result-label">Prediction</div>
+            <div class="result-label">Predicted Species</div>
             <div class="result-class">🌸 {display_name}</div>
             <div class="result-confidence">Confidence: {confidence:.2f}%</div>
             {low_conf_html}
@@ -689,16 +706,16 @@ def render_classifier(model, classes: list, model_label: str):
     detail_cols = st.columns(4)
     metric_card(detail_cols[0], "🏷️", "Predicted Class", display_name)
     metric_card(detail_cols[1], "📈", "Confidence", f"{confidence:.2f}%")
-    metric_card(detail_cols[2], "🧠", "Model Used", model_label)
+    metric_card(detail_cols[2], "🧠", "Model", model_label)
     metric_card(detail_cols[3], "🖼️", "Image Size", f"{image.size[0]}×{image.size[1]}px")
 
     st.write("")
     chart_col, table_col = st.columns([1.3, 1])
     with chart_col:
-        st.markdown(f"<div class='section-title' style='font-size:1.05rem;'>Top {TOP_K} Predictions</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='section-title'>Top {TOP_K} Predictions</div>", unsafe_allow_html=True)
         top_k_bar_chart(result["top_k"], classes)
     with table_col:
-        st.markdown("<div class='section-title' style='font-size:1.05rem;'>Full Class Probabilities</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Full Probability Distribution</div>", unsafe_allow_html=True)
         prob_df = pd.DataFrame(
             [
                 {"Class": k.replace("_", " ").title(), "Probability": f"{v:.2f}%"}
@@ -707,29 +724,26 @@ def render_classifier(model, classes: list, model_label: str):
         )
         st.dataframe(prob_df, hide_index=True, use_container_width=True, height=280)
         st.markdown(
-            f"<div style='color:#64748b;font-size:0.78rem;margin-top:4px;'>"
-            f"Processed in {elapsed_ms:.0f} ms · Status: Completed</div>",
+            f"<div style='color:#94a3b8;font-size:0.75rem;margin-top:4px;'>"
+            f"Processed in {elapsed_ms:.0f} ms</div>",
             unsafe_allow_html=True,
         )
 
-    # History
     st.write("")
-    st.markdown("<div class='section-title'>Prediction History</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📋 Prediction History</div>", unsafe_allow_html=True)
     hist_df = pd.DataFrame(st.session_state.history[::-1])
     st.dataframe(hist_df, hide_index=True, use_container_width=True)
     if st.button("🗑️ Clear History"):
         st.session_state.history = []
         st.rerun()
 
-
 # ----------------------------------------------------------------------------
 # PAGE: ANALYTICS
 # ----------------------------------------------------------------------------
 def render_analytics(classes: list):
-    st.markdown("<div class='section-title'>Analytics</div>", unsafe_allow_html=True)
+    st.markdown("<div class='page-title'>📊 Analytics</div>", unsafe_allow_html=True)
     st.markdown(
-        "<div class='section-caption'>Statistics based only on predictions made during "
-        "this session.</div>",
+        "<div class='page-subtitle'>Session statistics from all predictions made.</div>",
         unsafe_allow_html=True,
     )
 
@@ -763,7 +777,7 @@ def render_analytics(classes: list):
     chart_col1, chart_col2 = st.columns(2)
 
     with chart_col1:
-        st.markdown("<div class='section-title' style='font-size:1.05rem;'>Prediction Distribution</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Prediction Distribution</div>", unsafe_allow_html=True)
         labels = [c.replace("_", " ").title() for c in counts.index]
         colors = [color_for_class(c, classes) for c in counts.index]
         fig = go.Figure(
@@ -771,59 +785,58 @@ def render_analytics(classes: list):
                 labels=labels,
                 values=counts.values,
                 hole=0.55,
-                marker=dict(colors=colors, line=dict(color="#0b0f17", width=2)),
+                marker=dict(colors=colors, line=dict(color="#ffffff", width=2)),
                 textinfo="label+percent",
             )
         )
         fig.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#f1f5f9", family="Inter"),
+            font=dict(color="#1a1a2e", family="Inter"),
             showlegend=False,
             height=340,
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     with chart_col2:
-        st.markdown("<div class='section-title' style='font-size:1.05rem;'>Confidence Distribution</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Confidence Distribution</div>", unsafe_allow_html=True)
         fig2 = go.Figure(
             go.Histogram(
                 x=df["ConfidenceValue"],
                 nbinsx=10,
-                marker=dict(color="#ec4899"),
+                marker=dict(color="#1f77b4"),
             )
         )
         fig2.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#f1f5f9", family="Inter"),
-            xaxis=dict(title="Confidence (%)", color="#94a3b8", showgrid=False),
-            yaxis=dict(title="Count", color="#94a3b8", showgrid=False),
+            font=dict(color="#1a1a2e", family="Inter"),
+            xaxis=dict(title="Confidence (%)", color="#64748b", showgrid=True, gridcolor="#f0f0f0"),
+            yaxis=dict(title="Count", color="#64748b", showgrid=True, gridcolor="#f0f0f0"),
             height=340,
         )
         st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
     st.write("")
-    st.markdown("<div class='section-title' style='font-size:1.05rem;'>Session History</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Session History</div>", unsafe_allow_html=True)
     st.dataframe(df.drop(columns=["ConfidenceValue"])[::-1], hide_index=True, use_container_width=True)
-
 
 # ----------------------------------------------------------------------------
 # PAGE: ABOUT MODEL
 # ----------------------------------------------------------------------------
 def render_about(model, classes: list, model_label: str):
-    st.markdown("<div class='section-title'>About Model</div>", unsafe_allow_html=True)
+    st.markdown("<div class='page-title'>ℹ️ About Model</div>", unsafe_allow_html=True)
     st.markdown(
-        "<div class='section-caption'>What is this application, and how does it work?</div>",
+        "<div class='page-subtitle'>Technical details about the AI model powering this application.</div>",
         unsafe_allow_html=True,
     )
 
     st.markdown(
         f"""
-        <div class="glass-card">
-            <div style="font-weight:700;margin-bottom:8px;">What is this application?</div>
-            <div style="color:#94a3b8;line-height:1.7;font-size:0.94rem;">
+        <div class="card">
+            <div style="font-weight:600;margin-bottom:8px;">What is this application?</div>
+            <div style="color:#475569;line-height:1.7;font-size:0.92rem;">
             This application is powered by a Convolutional Neural Network built on top of
             <b>EfficientNetB2</b>, a proven image-recognition backbone pretrained on ImageNet.
             The base network was frozen and used as a fixed feature extractor to train a new
@@ -840,13 +853,12 @@ def render_about(model, classes: list, model_label: str):
     st.write("")
     st.markdown(
         f"""
-        <div class="glass-card">
-            <div style="font-weight:700;margin-bottom:8px;">Model Pipeline</div>
-            <div style="color:#94a3b8;line-height:1.7;font-size:0.94rem;">
-            Image → Preprocessing (RGB conversion, resize to {IMG_SIZE}×{IMG_SIZE})
-            → EfficientNetB2 Backbone (pretrained + fine-tuned) → Global Average Pooling
-            → Batch Normalization + Dropout → Dense(256, swish) → Dense({len(classes)}, softmax)
-            → Predicted Class + Confidence
+        <div class="card">
+            <div style="font-weight:600;margin-bottom:8px;">Model Pipeline</div>
+            <div style="color:#475569;line-height:1.7;font-size:0.92rem;">
+            Image → Preprocessing (RGB, resize {IMG_SIZE}×{IMG_SIZE}) → EfficientNetB2 Backbone
+            → Global Average Pooling → Batch Normalization + Dropout → Dense(256, swish)
+            → Dense({len(classes)}, softmax) → Predicted Class + Confidence
             </div>
         </div>
         """,
@@ -854,7 +866,7 @@ def render_about(model, classes: list, model_label: str):
     )
 
     st.write("")
-    st.markdown("<div class='section-title' style='font-size:1.1rem;'>Architecture &amp; Training Details</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Architecture & Training Details</div>", unsafe_allow_html=True)
 
     if model is not None:
         meta = get_model_metadata(model)
@@ -875,16 +887,14 @@ def render_about(model, classes: list, model_label: str):
     st.write("")
     st.markdown(
         f"""
-        <div class="glass-card">
-            <div style="font-weight:700;margin-bottom:8px;">Preprocessing (exactly as used in training)</div>
-            <div style="color:#94a3b8;line-height:1.9;font-size:0.9rem;">
+        <div class="card">
+            <div style="font-weight:600;margin-bottom:8px;">Preprocessing (matches training)</div>
+            <div style="color:#475569;line-height:1.9;font-size:0.88rem;">
             • Convert image to RGB<br>
             • Resize to {IMG_SIZE}×{IMG_SIZE} pixels<br>
-            • Cast pixel values to float32 (no manual division by 255 — EfficientNetB2's
-            Keras implementation normalizes internally)<br>
+            • Cast to float32 (no manual division by 255 — EfficientNetB2 normalizes internally)<br>
             • Output activation: Softmax over {len(classes)} classes<br>
             • Low-confidence threshold: predictions below {CONFIDENCE_THRESHOLD*100:.0f}%
-            are flagged as low-confidence, matching the notebook's production predictor
             </div>
         </div>
         """,
@@ -892,12 +902,11 @@ def render_about(model, classes: list, model_label: str):
     )
 
     st.write("")
-    st.markdown("<div class='section-title' style='font-size:1.05rem;'>Class Labels ({} total)</div>".format(len(classes)), unsafe_allow_html=True)
+    st.markdown(f"<div class='section-title'>Class Labels ({len(classes)} total)</div>", unsafe_allow_html=True)
     labels_df = pd.DataFrame(
         {"Index": range(len(classes)), "Class": [c.replace("_", " ").title() for c in classes]}
     )
     st.dataframe(labels_df, hide_index=True, use_container_width=True)
-
 
 # ----------------------------------------------------------------------------
 # MAIN
@@ -906,20 +915,19 @@ def main():
     inject_css()
     init_session_state()
 
-    # Load model + labels with robust error handling
     model, model_error = None, None
     model_path = None
     try:
         model, model_path = load_model()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         model_error = str(exc)
 
     classes, labels_error = None, None
     try:
         classes = load_class_labels()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         labels_error = str(exc)
-        classes = [f"class_{i}" for i in range(17)]  # minimal fallback so the UI can still render
+        classes = [f"class_{i}" for i in range(17)]
 
     model_loaded = model is not None and labels_error is None
     model_label = model_path.name if model_path else "Unavailable"
@@ -946,7 +954,6 @@ def main():
         "Streamlit, TensorFlow &amp; Plotly</div>",
         unsafe_allow_html=True,
     )
-
 
 if __name__ == "__main__":
     main()

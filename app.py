@@ -1,5 +1,5 @@
 """
-AI Vision — 17-Class Flower Classifier (Classic Theme)
+AI Vision — 17-Class Flower Classifier (Grassy Theme)
 A production-quality Streamlit application serving a trained CNN
 (EfficientNetB2 transfer-learning model) for 17-class flower classification.
 
@@ -58,7 +58,7 @@ st.set_page_config(
 )
 
 # ----------------------------------------------------------------------------
-# CUSTOM CSS — Clean Classic Theme
+# CUSTOM CSS — Grassy Theme with Flower Chunks
 # ----------------------------------------------------------------------------
 def inject_css() -> None:
     st.markdown(
@@ -72,50 +72,82 @@ def inject_css() -> None:
             font-family: 'Inter', sans-serif; 
         }
 
-        /* Main background - clean white/light gray */
+        /* ================================================================
+           GRASSY THEME — Flower chunks as background
+           ================================================================ */
+        
+        /* Main background with flower chunks pattern */
         .stApp {
-            background: #f8f9fa;
-            color: #1a1a2e;
+            background: 
+                /* Dark grassy gradient base */
+                radial-gradient(ellipse at 20% 50%, #1a3a2a 0%, #0d1f16 70%, #0a1812 100%),
+                /* Flower chunks pattern — small flower shapes */
+                radial-gradient(circle 8px at 10% 15%, rgba(255,182,193,0.15) 0%, transparent 100%),
+                radial-gradient(circle 6px at 25% 45%, rgba(255,105,180,0.12) 0%, transparent 100%),
+                radial-gradient(circle 10px at 40% 75%, rgba(255,182,193,0.10) 0%, transparent 100%),
+                radial-gradient(circle 7px at 55% 20%, rgba(255,20,147,0.08) 0%, transparent 100%),
+                radial-gradient(circle 9px at 70% 60%, rgba(255,182,193,0.12) 0%, transparent 100%),
+                radial-gradient(circle 5px at 85% 35%, rgba(255,105,180,0.10) 0%, transparent 100%),
+                radial-gradient(circle 8px at 92% 80%, rgba(255,182,193,0.08) 0%, transparent 100%),
+                /* More flower chunks scattered */
+                radial-gradient(circle 6px at 15% 88%, rgba(255,20,147,0.10) 0%, transparent 100%),
+                radial-gradient(circle 11px at 48% 92%, rgba(255,182,193,0.08) 0%, transparent 100%),
+                radial-gradient(circle 7px at 78% 10%, rgba(255,105,180,0.12) 0%, transparent 100%),
+                /* Light green grass blades */
+                repeating-linear-gradient(45deg, 
+                    rgba(34,139,34,0.03) 0px, 
+                    rgba(34,139,34,0.03) 2px,
+                    transparent 2px,
+                    transparent 8px
+                ),
+                /* Subtle grass texture */
+                repeating-linear-gradient(-45deg,
+                    rgba(0,100,0,0.02) 0px,
+                    rgba(0,100,0,0.02) 3px,
+                    transparent 3px,
+                    transparent 12px
+                );
+            color: #e8f0e8;
         }
 
-        /* Sidebar - clean white with subtle border */
+        /* Sidebar - semi-transparent dark glass */
         section[data-testid="stSidebar"] {
-            background: #ffffff;
-            border-right: 1px solid #e2e8f0;
+            background: rgba(13, 31, 22, 0.92);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        /* Hide menu and footer */
-        #MainMenu, footer, header { visibility: hidden; }
-
-        /* Cards - clean white with shadow */
+        /* Cards - glassmorphism on grass */
         .card {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
             border-radius: 12px;
             padding: 20px 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
         /* Metric cards */
         .metric-card {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
             border-radius: 10px;
             padding: 16px 20px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             height: 100%;
         }
         .metric-label {
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #64748b;
+            color: #8ab4a8;
             font-weight: 600;
         }
         .metric-value {
             font-size: 1.3rem;
             font-weight: 700;
-            color: #0f172a;
+            color: #e8f0e8;
         }
         .metric-icon { font-size: 1.2rem; margin-bottom: 6px; }
 
@@ -123,24 +155,116 @@ def inject_css() -> None:
         .page-title {
             font-size: 1.8rem;
             font-weight: 700;
-            color: #0f172a;
+            color: #e8f0e8;
             margin-bottom: 4px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         .page-subtitle {
-            color: #64748b;
+            color: #8ab4a8;
             font-size: 0.95rem;
             margin-bottom: 20px;
         }
         .section-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #0f172a;
+            color: #e8f0e8;
             margin: 8px 0 4px 0;
         }
         .section-caption {
-            color: #64748b;
+            color: #8ab4a8;
             font-size: 0.85rem;
             margin-bottom: 16px;
+        }
+
+        /* Buttons - grassy green */
+        .stButton > button {
+            background: linear-gradient(135deg, #2d6a4f 0%, #1a4a3a 100%);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .stButton > button:hover {
+            background: linear-gradient(135deg, #3a8a6a 0%, #2a5a4a 100%);
+            box-shadow: 0 4px 16px rgba(45, 106, 79, 0.4);
+            transform: translateY(-1px);
+        }
+        .stButton > button:active {
+            transform: scale(0.97);
+        }
+
+        /* Result card - highlight */
+        .result-card {
+            background: linear-gradient(135deg, rgba(45, 106, 79, 0.2), rgba(26, 74, 58, 0.3));
+            border: 1px solid rgba(45, 106, 79, 0.3);
+            border-radius: 12px;
+            padding: 24px 28px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+        }
+        .result-label {
+            color: #8ab4a8;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+        }
+        .result-class {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 4px 0;
+            color: #e8f0e8;
+            text-transform: capitalize;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .result-confidence {
+            font-size: 1rem;
+            color: #5c9a7a;
+            font-weight: 600;
+        }
+        .result-lowconf {
+            font-size: 0.8rem;
+            color: #fbbf24;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        /* Upload zone - grass themed */
+        div[data-testid="stFileUploaderDropzone"] {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.5px dashed rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Dataframes */
+        div[data-testid="stDataFrame"] {
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8ab4a8;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+        }
+
+        .footer-note {
+            text-align: center;
+            color: #5a7a6a;
+            font-size: 0.75rem;
+            margin-top: 30px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Status pills */
@@ -154,137 +278,37 @@ def inject_css() -> None:
             border-radius: 999px;
         }
         .status-online {
-            background: #e6f7e6;
-            border: 1px solid #b7e4b7;
-            color: #1e7e34;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            color: #4ade80;
         }
         .status-offline {
-            background: #fde8e8;
-            border: 1px solid #f5c6c6;
-            color: #b91c1c;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #f87171;
         }
         .status-dot {
             width: 6px; height: 6px; border-radius: 50%; background: currentColor;
         }
 
-        /* Buttons - clean blue */
-        .stButton > button {
-            background: #1f77b4;
-            color: white;
-            border: none;
+        /* Additional flower decorations */
+        .flower-deco {
+            display: inline-block;
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
+        }
+
+        /* Override streamlit elements */
+        .stSelectbox, .stTextInput, .stNumberInput {
+            background: rgba(255,255,255,0.03);
             border-radius: 8px;
-            padding: 0.5rem 1.2rem;
-            font-weight: 600;
-            transition: all 0.15s ease;
-        }
-        .stButton > button:hover {
-            background: #1a5f8f;
-            box-shadow: 0 2px 8px rgba(31,119,180,0.25);
-        }
-        .stButton > button:active {
-            transform: scale(0.97);
+            border: 1px solid rgba(255,255,255,0.06);
         }
 
-        /* Result card - clean */
-        .result-card {
-            background: #f0f7ff;
-            border: 1px solid #c5d9f0;
-            border-radius: 12px;
-            padding: 24px 28px;
-            text-align: center;
-        }
-        .result-label {
-            color: #64748b;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 600;
-        }
-        .result-class {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 4px 0;
-            color: #0f172a;
-            text-transform: capitalize;
-        }
-        .result-confidence {
-            font-size: 1rem;
-            color: #1f77b4;
-            font-weight: 600;
-        }
-        .result-lowconf {
-            font-size: 0.8rem;
-            color: #d97706;
-            font-weight: 600;
-            margin-top: 6px;
-        }
-
-        /* Upload zone */
-        div[data-testid="stFileUploaderDropzone"] {
-            background: #fafafa;
-            border: 1.5px dashed #cbd5e1;
-            border-radius: 12px;
-        }
-
-        /* Dataframes */
-        div[data-testid="stDataFrame"] {
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #94a3b8;
-            border: 1px dashed #e2e8f0;
-            border-radius: 12px;
-            background: #fafafa;
-        }
-
-        .footer-note {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            margin-top: 30px;
-            padding-top: 16px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        /* Sidebar nav buttons */
-        .stButton > button[data-testid="baseButton-secondary"] {
-            background: transparent;
-            color: #1a1a2e;
-            border: 1px solid transparent;
-            justify-content: flex-start;
-        }
-        .stButton > button[data-testid="baseButton-secondary"]:hover {
-            background: #f1f5f9;
-            border-color: #e2e8f0;
-        }
-        .stButton > button[data-testid="baseButton-primary"] {
-            background: #f1f5f9;
-            color: #1a1a2e;
-            border: 1px solid #e2e8f0;
-            justify-content: flex-start;
-        }
-
-        /* Code blocks */
-        .stCodeBlock {
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Expanders */
-        .streamlit-expanderHeader {
-            font-weight: 600;
-            color: #0f172a;
-            background: #fafafa;
-            border-radius: 8px;
-        }
-
-        /* Plotly charts - consistent sizing */
+        /* Plotly charts - dark theme compatible */
         .js-plotly-plot .plotly .main-svg {
             border-radius: 8px;
         }
@@ -457,9 +481,9 @@ def top_k_bar_chart(top_k: list, classes: list):
         margin=dict(l=10, r=40, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#1a1a2e", family="Inter"),
-        xaxis=dict(range=[0, 100], showgrid=True, gridcolor="#f0f0f0", ticksuffix="%", color="#64748b"),
-        yaxis=dict(showgrid=False, color="#1a1a2e", autorange="reversed"),
+        font=dict(color="#e8f0e8", family="Inter"),
+        xaxis=dict(range=[0, 100], showgrid=True, gridcolor="rgba(255,255,255,0.06)", ticksuffix="%", color="#8ab4a8"),
+        yaxis=dict(showgrid=False, color="#e8f0e8", autorange="reversed"),
         showlegend=False,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -468,10 +492,10 @@ def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
     with st.sidebar:
         st.markdown(
             """
-            <div style="font-size:1.2rem;font-weight:700;color:#0f172a;margin-bottom:2px;">
+            <div style="font-size:1.2rem;font-weight:700;color:#e8f0e8;margin-bottom:2px;">
                 🌸 AI Vision
             </div>
-            <div style="color:#64748b;font-size:0.75rem;margin-bottom:20px;">
+            <div style="color:#8ab4a8;font-size:0.75rem;margin-bottom:20px;">
                 Flower Classifier
             </div>
             """,
@@ -489,7 +513,7 @@ def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
         st.markdown("<div class='metric-label'>Model Information</div>", unsafe_allow_html=True)
         st.markdown(
             f"""
-            <div style="font-size:0.8rem; color:#475569; line-height:1.8;">
+            <div style="font-size:0.8rem; color:#8ab4a8; line-height:1.8;">
             CNN (EfficientNetB2 Transfer Learning)<br>
             {num_classes}-Class Flower Classification<br>
             TensorFlow / Keras
@@ -506,7 +530,7 @@ def sidebar_nav(model_loaded: bool, model_label: str, num_classes: int):
                 unsafe_allow_html=True,
             )
             st.markdown(
-                f"<div style='font-size:0.7rem;color:#94a3b8;margin-top:6px;'>{model_label}</div>",
+                f"<div style='font-size:0.7rem;color:#5a7a6a;margin-top:6px;'>{model_label}</div>",
                 unsafe_allow_html=True,
             )
         else:
@@ -532,7 +556,7 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
         unsafe_allow_html=True,
     )
     st.markdown(
-        "<div style='color:#475569;font-size:0.95rem;margin-bottom:20px;'>"
+        "<div style='color:#8ab4a8;font-size:0.95rem;margin-bottom:20px;'>"
         "Upload a flower photo and the AI will identify the species using an EfficientNetB2 "
         "convolutional neural network trained on a labeled flower image dataset.</div>",
         unsafe_allow_html=True,
@@ -557,8 +581,8 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
         st.markdown(
             """
             <div class="card">
-                <div style="font-weight:600;margin-bottom:8px;">Pipeline Overview</div>
-                <div style="color:#475569;font-size:0.88rem;line-height:1.7;">
+                <div style="font-weight:600;margin-bottom:8px;color:#e8f0e8;">Pipeline Overview</div>
+                <div style="color:#8ab4a8;font-size:0.88rem;line-height:1.7;">
                 Upload Image → Preprocess (Resize 260×260) → EfficientNetB2 Backbone → 
                 Dense Head → Softmax (17 classes) → Class + Confidence Score
                 </div>
@@ -579,19 +603,19 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
             f"""
             <div class="card">
                 <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                    <span style="color:#64748b;">Model Type</span>
-                    <span style="font-weight:500;">CNN (Transfer Learning)</span>
+                    <span style="color:#8ab4a8;">Model Type</span>
+                    <span style="font-weight:500;color:#e8f0e8;">CNN (Transfer Learning)</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                    <span style="color:#64748b;">Task</span>
-                    <span style="font-weight:500;">17-Class Image Classification</span>
+                    <span style="color:#8ab4a8;">Task</span>
+                    <span style="font-weight:500;color:#e8f0e8;">17-Class Image Classification</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                    <span style="color:#64748b;">Sample Classes</span>
-                    <span style="text-align:right;font-weight:500;">{class_preview}…</span>
+                    <span style="color:#8ab4a8;">Sample Classes</span>
+                    <span style="text-align:right;font-weight:500;color:#e8f0e8;">{class_preview}…</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#64748b;">Status</span>
+                    <span style="color:#8ab4a8;">Status</span>
                     <span class="status-pill {status_class}"><span class="status-dot"></span>{status_text}</span>
                 </div>
             </div>
@@ -603,8 +627,8 @@ def render_dashboard(model_loaded: bool, classes: list, model_label: str):
     st.markdown("<div class='section-title'>🌼 Recognized Species</div>", unsafe_allow_html=True)
     chip_html = "".join(
         f"<span style='display:inline-block;margin:4px;padding:5px 12px;border-radius:999px;"
-        f"background:#f1f5f9;border:1px solid #e2e8f0;color:#1a1a2e;font-size:0.8rem;'>"
-        f"{c.replace('_',' ').title()}</span>"
+        f"background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);"
+        f"color:#e8f0e8;font-size:0.8rem;'>{c.replace('_',' ').title()}</span>"
         for c in classes
     )
     st.markdown(f"<div class='card'>{chip_html}</div>", unsafe_allow_html=True)
@@ -646,7 +670,7 @@ def render_classifier(model, classes: list, model_label: str):
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.image(image, width=340)
         st.markdown(
-            f"<div style='color:#64748b;font-size:0.8rem;margin-top:6px;text-align:center;'>"
+            f"<div style='color:#8ab4a8;font-size:0.8rem;margin-top:6px;text-align:center;'>"
             f"{uploaded_file.name} · {image.size[0]}×{image.size[1]}px</div>",
             unsafe_allow_html=True,
         )
@@ -724,7 +748,7 @@ def render_classifier(model, classes: list, model_label: str):
         )
         st.dataframe(prob_df, hide_index=True, use_container_width=True, height=280)
         st.markdown(
-            f"<div style='color:#94a3b8;font-size:0.75rem;margin-top:4px;'>"
+            f"<div style='color:#5a7a6a;font-size:0.75rem;margin-top:4px;'>"
             f"Processed in {elapsed_ms:.0f} ms</div>",
             unsafe_allow_html=True,
         )
@@ -785,14 +809,14 @@ def render_analytics(classes: list):
                 labels=labels,
                 values=counts.values,
                 hole=0.55,
-                marker=dict(colors=colors, line=dict(color="#ffffff", width=2)),
+                marker=dict(colors=colors, line=dict(color="#0d1f16", width=2)),
                 textinfo="label+percent",
             )
         )
         fig.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#1a1a2e", family="Inter"),
+            font=dict(color="#e8f0e8", family="Inter"),
             showlegend=False,
             height=340,
         )
@@ -804,16 +828,16 @@ def render_analytics(classes: list):
             go.Histogram(
                 x=df["ConfidenceValue"],
                 nbinsx=10,
-                marker=dict(color="#1f77b4"),
+                marker=dict(color="#2d6a4f"),
             )
         )
         fig2.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#1a1a2e", family="Inter"),
-            xaxis=dict(title="Confidence (%)", color="#64748b", showgrid=True, gridcolor="#f0f0f0"),
-            yaxis=dict(title="Count", color="#64748b", showgrid=True, gridcolor="#f0f0f0"),
+            font=dict(color="#e8f0e8", family="Inter"),
+            xaxis=dict(title="Confidence (%)", color="#8ab4a8", showgrid=True, gridcolor="rgba(255,255,255,0.06)"),
+            yaxis=dict(title="Count", color="#8ab4a8", showgrid=True, gridcolor="rgba(255,255,255,0.06)"),
             height=340,
         )
         st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
@@ -835,10 +859,10 @@ def render_about(model, classes: list, model_label: str):
     st.markdown(
         f"""
         <div class="card">
-            <div style="font-weight:600;margin-bottom:8px;">What is this application?</div>
-            <div style="color:#475569;line-height:1.7;font-size:0.92rem;">
+            <div style="font-weight:600;margin-bottom:8px;color:#e8f0e8;">What is this application?</div>
+            <div style="color:#8ab4a8;line-height:1.7;font-size:0.92rem;">
             This application is powered by a Convolutional Neural Network built on top of
-            <b>EfficientNetB2</b>, a proven image-recognition backbone pretrained on ImageNet.
+            <b style="color:#e8f0e8;">EfficientNetB2</b>, a proven image-recognition backbone pretrained on ImageNet.
             The base network was frozen and used as a fixed feature extractor to train a new
             classification head, then partially unfrozen and fine-tuned end-to-end — a
             technique called transfer learning that lets a large, general-purpose vision model
@@ -854,8 +878,8 @@ def render_about(model, classes: list, model_label: str):
     st.markdown(
         f"""
         <div class="card">
-            <div style="font-weight:600;margin-bottom:8px;">Model Pipeline</div>
-            <div style="color:#475569;line-height:1.7;font-size:0.92rem;">
+            <div style="font-weight:600;margin-bottom:8px;color:#e8f0e8;">Model Pipeline</div>
+            <div style="color:#8ab4a8;line-height:1.7;font-size:0.92rem;">
             Image → Preprocessing (RGB, resize {IMG_SIZE}×{IMG_SIZE}) → EfficientNetB2 Backbone
             → Global Average Pooling → Batch Normalization + Dropout → Dense(256, swish)
             → Dense({len(classes)}, softmax) → Predicted Class + Confidence
@@ -888,8 +912,8 @@ def render_about(model, classes: list, model_label: str):
     st.markdown(
         f"""
         <div class="card">
-            <div style="font-weight:600;margin-bottom:8px;">Preprocessing (matches training)</div>
-            <div style="color:#475569;line-height:1.9;font-size:0.88rem;">
+            <div style="font-weight:600;margin-bottom:8px;color:#e8f0e8;">Preprocessing (matches training)</div>
+            <div style="color:#8ab4a8;line-height:1.9;font-size:0.88rem;">
             • Convert image to RGB<br>
             • Resize to {IMG_SIZE}×{IMG_SIZE} pixels<br>
             • Cast to float32 (no manual division by 255 — EfficientNetB2 normalizes internally)<br>
